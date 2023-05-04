@@ -276,7 +276,7 @@ class UTF8MB4Converter:
         self.logger.debug(f"Start converting character set of column {col}(@{table}) to {charset}")
 
         if not column["charset"]:
-            self.logger.debug(f"Column {col}(@{table}) has no set default character")
+            self.logger.debug(f"Column {col}(@{table}) has no default character set")
             return
         if not column["type"] in ["char", "varchar", "text", "longtext"]:
             self.logger.debug(f"Column {col}(@{table}) does contain data of type {column['type']}")
