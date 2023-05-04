@@ -253,6 +253,7 @@ class UTF8MB4Converter:
             self,
             column: dict,
             table: str,
+            newtype: str = None,
             charset: str = DEFAULT_CHARSET,
             collation: str = DEFAULT_COLLATION
         ) -> None:
@@ -264,6 +265,10 @@ class UTF8MB4Converter:
             - a dict containig information about the column to be altered
         - table (str)
             - the table housing the column
+        - newtype (str)
+            - enter a new type if it should be changed
+            - if no type is entered, the type is kept
+            - default value: None
         - charset (str)
             - target character set
             - default value: utf8mb4
@@ -287,7 +292,7 @@ class UTF8MB4Converter:
         
         query = " ".join((
             f"ALTER TABLE {table} CHANGE {col} {col}",
-            f"{column['ctype']} CHARACTER SET {charset} COLLATE {collation}",
+            f"{newtype or column['ctype']} CHARACTER SET {charset} COLLATE {collation}",
             "NULL" if column["nullable"] == "YES" else f"NOT NULL DEFAULT {column['dvalue']}"
         ))
         try:
