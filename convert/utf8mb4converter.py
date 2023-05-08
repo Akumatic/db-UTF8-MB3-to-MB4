@@ -23,8 +23,10 @@ class UTF8MB4Converter:
         - Logger object for this file
     - _connection (mariadb.Connection)
         - database connection
-    - cur (mariadb.Cursor)
-        - database cursor
+    - cursor (mariadb.Cursor)
+        - database cursor with keys only
+    - kcursor (mariadb.Cursor)
+        - database cursor with keys and values
     """
 
     def __init__(
@@ -59,7 +61,8 @@ class UTF8MB4Converter:
             self.logger.fatal(f"Connection failed: {e}")
             sys.exit()
 
-        self.cur: mariadb.Cursor = self._connection.cursor()
+        self.cursor: mariadb.Cursor = self._connection.cursor(dictionary=False)
+        self.kcursor: mariadb.Cursor = self._connection.cursor(dictionary=True)
 
     def __del__(
             self
@@ -82,8 +85,8 @@ class UTF8MB4Converter:
         """
         
         query = f"SHOW TABLES FROM {self.db}"
-        self.cur.execute(query)
-        return [table[0] for table in self.cur.fetchall()]
+        self.cursor.execute(query)
+        return [table[0] for table in self.cursor.fetchall()]
     
     def get_charset_db (
             self
@@ -97,11 +100,12 @@ class UTF8MB4Converter:
         """
 
         query = " ".join((
-            "SELECT default_character_set_name, default_collation_name",
+            "SELECT DEFAULT_CHARACTER_SET_NAME as charset,",
+            "DEFAULT_COLLATION_NAME as collation",
             f"FROM information_schema.SCHEMATA WHERE schema_name = '{self.db}'"
         ))
-        self.cur.execute(query)
-        return dict(zip(("charset", "collation"), self.cur.fetchone()))
+        self.kcursor.execute(query)
+        return self.kcursor.fetchone()
 
     def get_charset_table (
             self,
@@ -120,14 +124,15 @@ class UTF8MB4Converter:
         """
 
         query = " ".join((
-            "SELECT CCSA.character_set_name, table_collation",
+            "SELECT CCSA.character_set_name AS charset,",
+            "table_collation AS collation",
             "FROM information_schema.TABLES AS T",
             "JOIN information_schema.COLLATION_CHARACTER_SET_APPLICABILITY AS CCSA", 
             "WHERE T.table_collation = CCSA.collation_name",
             f"AND table_schema = '{self.db}' AND table_name = '{table}'"
         ))
-        self.cur.execute(query)
-        return dict(zip(("charset", "collation"), self.cur.fetchone()))
+        self.kcursor.execute(query)
+        return self.kcursor.fetchone()
     
     def get_columns_of_table (
             self,
@@ -153,9 +158,8 @@ class UTF8MB4Converter:
             "FROM information_schema.COLUMNS", 
             f"WHERE table_schema = '{self.db}' AND table_name = '{table}'"
         ))
-        self.cur.execute(query)
-        lables = ["name", "type", "ctype", "charset", "collation", "nullable", "dvalue"]
-        return [dict(zip(lables, col)) for col in self.cur.fetchall()]
+        self.kcursor.execute(query)
+        return self.kcursor.fetchall()
 
     def convert_charset_db (
             self,
@@ -183,7 +187,7 @@ class UTF8MB4Converter:
         
         query = f"ALTER DATABASE {self.db} CHARACTER SET = {charset} COLLATE = {collation}"
         try:
-            self.cur.execute(query)
+            self.cursor.execute(query)
             self.logger.debug(f"Character set of database {self.db} successfully converted to {charset}")
         except mariadb.Error as e:
             self.logger.error("\n".join((
@@ -220,7 +224,7 @@ class UTF8MB4Converter:
         
         query = f"ALTER TABLE {table} CONVERT TO CHARACTER SET {charset} COLLATE {collation}"
         try:
-            self.cur.execute(query)
+            self.cursor.execute(query)
             self.logger.debug(f"Character set of table {table} successfully converted to {charset}")
         except mariadb.Error as e:
             self.logger.error("\n".join((
@@ -300,7 +304,7 @@ class UTF8MB4Converter:
             constraint
         ))
         try:
-            self.cur.execute(query)
+            self.cursor.execute(query)
             self.logger.debug(f"Character set of column {col}(@{table}) successfully converted to {charset}")
         except mariadb.Error as e:
             self.logger.error("\n".join((
