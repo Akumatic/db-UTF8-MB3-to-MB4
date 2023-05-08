@@ -32,8 +32,8 @@ def main (
         logging.getLogger("Main").info(f"Database statistics:\n{stats}")
     else:
         db.convert_charset_db()
-        db.convert_charset_all_tables()
         db.convert_charset_all_columns_all_tables()
+        db.convert_charset_all_tables()
 
 def parse_args (
     ) -> argparse.Namespace:

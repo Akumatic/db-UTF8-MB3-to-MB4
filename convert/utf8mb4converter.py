@@ -253,9 +253,9 @@ class UTF8MB4Converter:
             self,
             column: dict,
             table: str,
-            newtype: str = None,
             charset: str = DEFAULT_CHARSET,
-            collation: str = DEFAULT_COLLATION
+            collation: str = DEFAULT_COLLATION,
+            newtype: str = None
         ) -> None:
         """
         Alters the charset and collation of a single column.
@@ -283,17 +283,21 @@ class UTF8MB4Converter:
         if not column["charset"]:
             self.logger.debug(f"Column {col}(@{table}) has no default character set")
             return
-        if not column["type"] in ["char", "varchar", "text", "longtext"]:
-            self.logger.debug(f"Column {col}(@{table}) does contain data of type {column['type']}")
-            return
         if column["charset"] == charset:
             self.logger.debug(f"Column {col}(@{table}) already has character set {charset}")
             return
         
+        if column['nullable'] == "YES":
+            constraint = "NULL"
+        else:
+            constraint = "NOT NULL"
+            if column['dvalue'] is not None:
+                constraint += f" DEFAULT {column['dvalue']}"
+
         query = " ".join((
             f"ALTER TABLE {table} CHANGE {col} {col}",
             f"{newtype or column['ctype']} CHARACTER SET {charset} COLLATE {collation}",
-            "NULL" if column["nullable"] == "YES" else f"NOT NULL DEFAULT {column['dvalue']}"
+            constraint
         ))
         try:
             self.cur.execute(query)
