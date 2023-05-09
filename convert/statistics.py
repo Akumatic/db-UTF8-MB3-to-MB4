@@ -14,22 +14,29 @@ class Statistics:
         - The converter object storing the database information and connection 
     - data (dict)
         - A dictionary holding the generated data: Number of tables & columns and character set overview
+    - charset (str):
+        - A string storing the target charset
     """
 
     def __init__ (
             self,
-            dbcon: UTF8MB4Converter
+            dbcon: UTF8MB4Converter,
+            charset: str = DEFAULT_CHARSET
         ) -> None:
         """
         Constructor of Statistics object. Generates statistics at creation.
 
         Parameters:
         - dbcon (UTF8MB4Converter)
-            - The converter object storing the database information and connection 
+            - The converter object storing the database information and connection
+        - charset (str):
+            - the target charset for comparison
+            - default: DEFAULT_CHARSET from class UTF8MB4Converter
         """
 
         self.dbcon = dbcon
         self.data: dict = None
+        self.charset = charset
         self.update_stats()
     
     def __str__ (
@@ -101,12 +108,12 @@ class Statistics:
             },
             "converted": {
                 "tables": {
-                    "converted": charset_tab[DEFAULT_CHARSET],
-                    "missing": count_tab - charset_tab[DEFAULT_CHARSET]
+                    "converted": charset_tab[self.charset],
+                    "missing": count_tab - charset_tab[self.charset]
                 },
                 "columns": {
-                    "converted": charset_col[DEFAULT_CHARSET],
-                    "missing": count_col - charset_col[DEFAULT_CHARSET] - charset_col[None]
+                    "converted": charset_col[self.charset],
+                    "missing": count_col - charset_col[self.charset] - charset_col[None]
                 }
             }
         }

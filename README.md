@@ -15,8 +15,14 @@ If an error occurs during the conversion of a table or column, an output with th
 ## Usage
 
 ```
-python convert.py [-h] [-v] [-s] -H HOST -P PORT -u USER -p PASSWORD -d DATABASE
+python convert.py [-h] [-v] [-s | -V] -H HOST -P PORT -u USER -p PASSWORD -d DATABASE
 ```
+
+Options:
+- `-h/--help`
+- `-s/--statistics`
+- `-V/--validate`
+
 Required arguments:
 - `-H/--host HOST`
 - `-P/--port PORT`
@@ -25,6 +31,4 @@ Required arguments:
 - `-d/--database DATABASE`
 
 Optional arguments:
-- `-h/--help`
 - `-v/--verbose`
-- `-s/--statistics` 

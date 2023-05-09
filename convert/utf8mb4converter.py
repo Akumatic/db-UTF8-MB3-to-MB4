@@ -291,12 +291,9 @@ class UTF8MB4Converter:
             self.logger.debug(f"Column {col}(@{table}) already has character set {charset}")
             return
         
-        if column['nullable'] == "YES":
-            constraint = "NULL"
-        else:
-            constraint = "NOT NULL"
-            if column['dvalue'] is not None:
-                constraint += f" DEFAULT {column['dvalue']}"
+        constraint = "NULL" if column["nullable"] == "YES" else "NOT NULL"
+        if column['dvalue'] is not None:
+            constraint += f" DEFAULT {column['dvalue']}"
 
         query = " ".join((
             f"ALTER TABLE {table} CHANGE {col} {col}",
@@ -356,3 +353,24 @@ class UTF8MB4Converter:
         tables = self.get_tables()
         for table in tables:
             self.convert_charset_all_columns_single_table(table, charset, collation)
+
+    def convert_charset_all (
+            self,
+            charset: str = DEFAULT_CHARSET,
+            collation: str = DEFAULT_COLLATION
+        ) -> None:
+        """
+        Alters the charset and collation of the database, all columns and all tables
+
+        Parameters:
+        - charset (str)
+            - target character set
+            - default value: utf8mb4
+        - collation (str)
+            - target collation
+            - default value: utf8mb4_unicode_520_ci
+        """
+
+        self.convert_charset_db(charset, collation)
+        self.convert_charset_all_columns_all_tables(charset, collation)
+        self.convert_charset_all_tables(charset, collation)

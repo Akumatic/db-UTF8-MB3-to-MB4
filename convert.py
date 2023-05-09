@@ -3,8 +3,10 @@
 
 import logging
 import argparse
+from json import dumps
+from convert.validation import Validation
 from convert.statistics import Statistics
-from convert.utf8mb4converter import UTF8MB4Converter
+from convert.utf8mb4converter import UTF8MB4Converter, DEFAULT_CHARSET
 
 def main (
         args: argparse.Namespace
@@ -14,11 +16,11 @@ def main (
     or converts the database itself, all tables and all text fields to utf8mb4 if they don't already
     have this character set.
 
-    Params:
+    Parameters:
     - args (argparse.Namespace)
         - Contains arguments passed to the program
     """
-    
+    logger: logging.Logger = logging.getLogger("Main")
     db: UTF8MB4Converter = UTF8MB4Converter (
         user = args.user,
         password = args.password,
@@ -28,12 +30,16 @@ def main (
     )
 
     if args.statistics:
-        stats = Statistics(db)
-        logging.getLogger("Main").info(f"Database statistics:\n{stats}")
+        stats: Statistics = Statistics(db)
+        logger.info(f"Database statistics:\n{stats}")
+
+    elif args.validate:
+        validator = Validation(db)
+        validation: dict = validator.convert_validate()
+        logger.info(f"Database conversion validation:\n{dumps(validation, indent=4)}")
+
     else:
-        db.convert_charset_db()
-        db.convert_charset_all_columns_all_tables()
-        db.convert_charset_all_tables()
+        db.convert_charset_all()
 
 def parse_args (
     ) -> argparse.Namespace:
@@ -41,15 +47,18 @@ def parse_args (
     Parses the arguments passed to the program.
 
     Returns:
-        - An argparse namespace containing the parsed arguments
+    - An argparse namespace containing the parsed arguments
     """
 
     argparser: argparse.ArgumentParser = argparse.ArgumentParser()  
     args_opt: argparse._ArgumentGroup = argparser.add_argument_group("Optional Arguments")
     args_req: argparse._ArgumentGroup = argparser.add_argument_group("Required Arguments")
+    args_exc: argparse._MutuallyExclusiveGroup = argparser.add_mutually_exclusive_group()
 
     args_opt.add_argument("-v", "--verbose", action="store_true")
-    args_opt.add_argument("-s", "--statistics", action="store_true")
+
+    args_exc.add_argument("-s", "--statistics", action="store_true")
+    args_exc.add_argument("-V", "--validate", action="store_true")
 
     args_req.add_argument("-H", "--host", required=True)
     args_req.add_argument("-P", "--port", required=True, type=int)
